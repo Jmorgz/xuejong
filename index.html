@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XuéJong - Active Study Arena</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .perspective-1000 { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .backface-hidden { backface-visibility: hidden; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        @keyframes shake {
+            0%, 100% { transform: rotateY(180deg) translateX(0); }
+            25% { transform: rotateY(180deg) translateX(-6px); }
+            75% { transform: rotateY(180deg) translateX(6px); }
+        }
+        .animate-shake { animation: shake 0.25s ease-in-out 2; }
+    </style>
+</head>
+<body class="bg-indigo-950 text-slate-50 min-h-screen flex flex-col justify-between font-sans selection:bg-lime-400 selection:text-indigo-950">
+
+    <!-- High-Energy Navigation Header -->
+    <header class="border-b-2 border-lime-400/30 bg-indigo-900/90 backdrop-blur sticky top-0 z-50 px-4 h-16 flex items-center justify-between shadow-md">
+        <div class="flex items-center gap-2.5 cursor-pointer" onclick="switchView('dashboard')">
+            <!-- Brain Stimulating Electric Lime Logo Tile -->
+            <div class="bg-lime-400 text-indigo-950 font-black px-3 py-1 rounded-xl text-lg tracking-tighter shadow-lg shadow-lime-400/20 transform hover:scale-105 transition">
+                学
+            </div>
+            <div class="flex flex-col">
+                <span class="font-black text-xl tracking-tight text-white leading-none">XuéJong</span>
+                <span class="text-[10px] font-bold text-lime-400 uppercase tracking-widest mt-0.5">Energized Study</span>
+            </div>
+        </div>
+        
+        <!-- Live Active Arena HUD -->
+        <div id="gameHud" class="hidden items-center gap-3">
+            <div id="modeBadge" class="text-xs px-2.5 py-1 rounded-full font-bold uppercase tracking-wide">---</div>
+            <div id="timerDisplay" class="hidden items-center gap-1 font-mono text-base font-black text-amber-400 bg-amber-400/20 px-3 py-1 rounded-lg border-2 border-amber-400 animate-pulse">
+                <i data-lucide="timer" class="w-4 h-4"></i><span id="timeClock">60s</span>
+            </div>
+            <div id="heartsDisplay" class="hidden items-center gap-1 text-rose-400 bg-rose-500/20 px-3 py-1 rounded-lg border-2 border-rose-500/40">
+                <span id="heartIcons" class="flex gap-0.5"></span>
+            </div>
+        </div>
+
+        <nav id="navControls">
+            <button onclick="switchView('creator')" class="text-xs font-black bg-lime-400 hover:bg-lime-300 text-indigo-950 px-4 py-2 rounded-xl transition shadow-md shadow-lime-400/10 flex items-center gap-1 uppercase tracking-wider">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i> Build Deck
+            </button>
+        </nav>
+    </header>
+
+    <!-- Global Dynamic Alert Notification Toast -->
+    <div id="toastNotification" class="hidden fixed top-20 left-1/2 transform -translate-x-1/2 z-50 bg-lime-400 text-indigo-950 px-6 py-3 rounded-xl font-black text-sm shadow-xl items-center gap-2 border-2 border-white transition-all duration-300">
+        <i data-lucide="check-circle" class="w-4 h-4"></i> <span id="toastMessage">Link copied!</span>
+    </div>
+
+    <!-- VIEW 1: DASHBOARD / SELECTION SCREEN -->
+    <main id="view-dashboard" class="max-w-4xl mx-auto w-full px-4 py-8 flex-1 app-view">
+        <div class="mb-8 p-6 rounded-2xl bg-gradient-to-br from-indigo-900 to-purple-900 border-2 border-indigo-500/30 shadow-xl">
+            <h1 class="text-3xl font-black tracking-tight text-white mb-1">Boost Your Cognitive Focus! 🧠</h1>
+            <p class="text-indigo-200 text-sm">Match terminology tiles under pressure to seal concepts into long-term memory.</p>
+        </div>
+
+        <h2 class="text-xs font-black uppercase tracking-widest text-lime-400 mb-4 flex items-center gap-1.5">
+            <i data-lucide="brain-circuit" class="w-4 h-4"></i> Active Training Modules
+        </h2>
+        
+        <div id="decksGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+            <!-- Populated via script -->
+        </div>
+    </main>
+
+    <!-- VIEW 2: DECK CREATOR WORKSPACE -->
+    <main id="view-creator" class="hidden max-w-3xl mx-auto w-full px-4 py-8 flex-1 app-view">
+        <div class="mb-6">
+            <h1 class="text-2xl font-black text-white">Deck Assembly Lab</h1>
+            <p class="text-indigo-200 text-xs">Create custom cards. Empty sets are ignored upon building.</p>
+        </div>
+
+        <div class="bg-indigo-900 border-2 border-indigo-500/30 rounded-2xl p-5 mb-6 shadow-xl">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-[10px] font-black uppercase tracking-widest text-lime-400 mb-1.5">Subject Category</label>
+                    <input type="text" id="subjectInput" placeholder="e.g., Medicine, Spanish" class="w-full bg-indigo-950 border-2 border-indigo-700/60 rounded-xl px-3 py-2.5 text-sm font-semibold text-white focus:outline-none focus:border-lime-400 transition placeholder:text-indigo-700">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black uppercase tracking-widest text-lime-400 mb-1.5">Topic Title</label>
+                    <input type="text" id="topicInput" placeholder="e.g., Nervous System" class="w-full bg-indigo-950 border-2 border-indigo-700/60 rounded-xl px-3 py-2.5 text-sm font-semibold text-white focus:outline-none focus:border-lime-400 transition placeholder:text-indigo-700">
+                </div>
+            </div>
+        </div>
+
+        <div class="space-y-3" id="rowsContainer">
+            <!-- Target for user dynamic inputs -->
+        </div>
+
+        <div class="mt-6 flex flex-col sm:flex-row justify-between items-center bg-indigo-900 border border-indigo-800 rounded-2xl p-4 gap-3 shadow-xl">
+            <button type="button" id="addRowBtn" class="flex items-center gap-1.5 text-xs font-black text-lime-400 hover:text-white bg-lime-400/10 px-4 py-2.5 rounded-xl border-2 border-lime-400/30 hover:bg-lime-400/20 transition tracking-wider uppercase">
+                <i data-lucide="plus" class="w-4 h-4"></i> Add Pair Row
+            </button>
+            <div class="flex gap-2 w-full sm:w-auto">
+                <button type="button" onclick="switchView('dashboard')" class="flex-1 sm:flex-initial text-xs font-bold text-indigo-300 px-4 py-2.5 rounded-xl transition">Cancel</button>
+                <button type="button" id="publishBtn" class="flex-1 sm:flex-initial text-xs font-black bg-lime-400 hover:bg-lime-300 text-indigo-950 px-5 py-2.5 rounded-xl shadow-lg shadow-lime-400/10 tracking-wider uppercase">Save to Device</button>
+            </div>
+        </div>
+    </main>
+
+    <!-- VIEW 3: GAME ARENA GRID -->
+    <main id="view-arena" class="hidden flex-1 max-w-5xl mx-auto w-full p-4 flex flex-col justify-center app-view">
+        <div id="gameGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 py-4"></div>
+    </main>
+
+    <!-- OVERLAYS & MODALS -->
+    <!-- Setup Mode Overlay -->
+    <div id="setupModal" class="hidden fixed inset-0 bg-indigo-950/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-indigo-900 border-2 border-lime-400/40 max-w-sm w-full rounded-2xl p-6 shadow-2xl relative">
+            <button onclick="switchView('dashboard')" class="absolute top-4 right-4 text-indigo-300 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            <h3 class="text-2xl font-black mb-1 text-white flex items-center gap-2"><i data-lucide="activity" class="text-lime-400"></i> Engine Ruleset</h3>
+            <p class="text-xs text-indigo-200 mb-5">Select a mode to activate focus stimulus pathways.</p>
+            
+            <div class="space-y-3">
+                <button onclick="launchMatchSession('blitz')" class="w-full text-left p-4 rounded-xl border-2 border-indigo-700 bg-indigo-950 hover:border-amber-400 transition flex items-start gap-4 group">
+                    <div class="p-2.5 bg-amber-400 text-indigo-950 rounded-lg font-black shadow-md"><i data-lucide="zap" class="w-5 h-5"></i></div>
+                    <div>
+                        <div class="font-black text-sm text-amber-400 uppercase tracking-wide">⚡ Timed Blitz Mode</div>
+                        <div class="text-[11px] text-indigo-200 mt-0.5">60s clock. Correct pairs add <span class="text-lime-400 font-bold">+3s</span> back. Fast cognitive processing!</div>
+                    </div>
+                </button>
+                <button onclick="launchMatchSession('survival')" class="w-full text-left p-4 rounded-xl border-2 border-indigo-700 bg-indigo-950 hover:border-rose-400 transition flex items-start gap-4 group">
+                    <div class="p-2.5 bg-rose-500 text-white rounded-lg font-black shadow-md"><i data-lucide="heart" class="w-5 h-5"></i></div>
+                    <div>
+                        <div class="font-black text-sm text-rose-400 uppercase tracking-wide">🛡️ Survival Challenge</div>
+                        <div class="text-[11px] text-indigo-200 mt-0.5">3 strategic lives. Wrong matches shatter hearts. High precision accuracy training.</div>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- End Game Modal -->
+    <div id="endGameModal" class="hidden fixed inset-0 bg-indigo-950/95 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-indigo-900 border-2 border-indigo-700 max-w-xs w-full rounded-2xl p-6 text-center shadow-2xl">
+            <div id="endGameIcon" class="w-14 h-14 mx-auto rounded-2xl flex items-center justify-center mb-4 text-2xl font-black"></div>
+            <h3 id="endGameTitle" class="text-2xl font-black mb-1 text-white">---</h3>
+            <p id="endGameDesc" class="text-xs text-indigo-200 mb-6">---</p>
+            <button onclick="switchView('dashboard')" class="w-full bg-lime-400 text-indigo-950 font-black py-3 rounded-xl text-sm transition uppercase tracking-wider shadow-md hover:bg-lime-300">Return to Nexus</button>
+        </div>
+    </div>
+
+    <footer class="border-t border-indigo-900 bg-indigo-950 text-center py-4 text-[11px] text-indigo-400 font-bold tracking-widest uppercase">
+        XuéJong Engine &copy; 2026 • Master Your Mind One Tile at a Time
+    </footer>
+
+    <!-- LOGIC INTEGRATION CODE ENGINE -->
+    <script>
+        const coreFallbacks = [
+            {
+                id: "def-bio-cell", subject: "Biology", topic: "Cell Components",
+                cards: [
+                    { id: "c1", term: "Mitochondria", definition: "Powerhouse of the cell, generating structural ATP units." },
+                    { id: "c2", term: "Ribosomes", definition: "Microscopic biological engines assembling complex amino chains." },
+                    { id: "c3", term: "Nucleus", definition: "Secure vault protecting genetic master codes & instructions." }
+                ]
+            }
+        ];
+
+        let activeDeck = null;
+        let gameMode = null;
+        let chosenCards = [];
+        let matchedPairsCount = 0;
+        let timerInterval = null;
+        let timeRemaining = 60;
+        let survivalLives = 3;
+        let pairCount = 0;
+
+        function showToast(message) {
+            const toast = document.getElementById('toastNotification');
+            document.getElementById('toastMessage').innerText = message;
+            toast.classList.remove('hidden');
+            toast.classList.add('flex');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+                toast.classList.remove('flex');
+            }, 2500);
+        }
+
+        function switchView(viewName) {
+            clearInterval(timerInterval);
+            document.getElementById('setupModal').classList.add('hidden');
+            document.getElementById('endGameModal').classList.add('hidden');
+            document.getElementById('gameHud').classList.add('hidden');
+            document.getElementById('navControls').classList.remove('hidden');
+
+            document.querySelectorAll('.app-view').forEach(view => view.classList.add('hidden'));
+            document.getElementById(`view-${viewName}`).classList.remove('hidden');
+
+            if (viewName === 'dashboard') { checkURLForSharedDecks(); renderDashboardDecks(); }
+            if (viewName === 'creator') { resetDeckCreatorWorkspace(); }
+            lucide.createIcons();
+        }
+
+        // DECK SHARE ENGINE BLOCK: Pack card configuration directly into single link structures
+        function generateShareLink(deckId, event) {
+            event.stopPropagation(); // Prevents launching the game directly when clicking share button
+            let userDecks = JSON.parse(localStorage.getItem('xuejong_decks')) || coreFallbacks;
+            const targetDeck = userDecks.find(d => d.id === deckId);
+            
+            if(!targetDeck) return;
+
+            try {
+                // Compress payload array architecture safely into string parameters
+                const encryptedString = btoa(unescape(encodeURIComponent(JSON.stringify(targetDeck))));
+                const shareableLink = `${window.location.origin}${window.location.pathname}?deck=${encryptedString}`;
+                
+                navigator.clipboard.writeText(shareableLink).then(() => {
+                    showToast("Shareable link copied to clipboard!");
+                }).catch(() => {
+                    // Direct screen fallback prompt for mobile clipboard blocks
+                    prompt("Copy your custom challenge link here:", shareableLink);
+                });
+            } catch(e) {
+                alert("Could not compile deck parameter compression details.");
+            }
+        }
+
+        // Check incoming query data patterns to import configurations dynamically
+        function checkURLForSharedDecks() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const sharedDeckData = urlParams.get('deck');
+
+            if(sharedDeckData) {
+                try {
+                    const parsedDeck = JSON.parse(decodeURIComponent(escape(atob(sharedDeckData))));
+                    
+                    if(parsedDeck && parsedDeck.topic && parsedDeck.cards) {
+                        let localDecks = JSON.parse(localStorage.getItem('xuejong_decks')) || coreFallbacks;
+                        
+                        // Prevent duplicate entry insertion arrays
+                        if(!localDecks.some(d => d.id === parsedDeck.id)) {
+                            localDecks.push(parsedDeck);
+                            localStorage.setItem('xuejong_decks', JSON.stringify(localDecks));
+                            showToast(`Imported External Deck: ${parsedDeck.topic}!`);
+                        }
+                    }
+                    // Wipe parameters quietly to preserve space and tidy URLs
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                } catch(e) {
+                    console.error("Failed importing share parameters link tracking indices.");
+                }
+            }
+        }
+
+        function renderDashboardDecks() {
+            let userDecks = JSON.parse(localStorage.getItem('xuejong_decks')) || coreFallbacks;
+            const grid = document.getElementById('decksGrid');
+            grid.innerHTML = '';
+
+            userDecks.forEach(deck => {
+                const card = document.createElement('div');
+                card.className = 'bg-indigo-900 border-2 border-indigo-800 rounded-2xl p-5 hover:border-lime-400 transition duration-300 flex flex-col justify-between group shadow-lg';
+                card.innerHTML = `
+                    <div>
+                        <div class="flex justify-between items-start">
+                            <span class="text-[10px] font-black text-indigo-950 bg-lime-400 px-2.5 py-0.5 rounded-md uppercase tracking-wider">${deck.subject}</span>
+                            <button onclick="generateShareLink('${deck.id}', event)" class="text-indigo-400 hover:text-lime-400 p-1 bg-indigo-950/40 rounded-lg transition" title="Share Challenge Link">
+                                <i data-lucide="share-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        <h3 class="font-black text-xl text-white mt-3 tracking-tight group-hover:text-lime-300 transition">${deck.topic}</h3>
+                        <p class="text-xs text-indigo-200 mt-1">${deck.cards.length} Focus Pairs</p>
+                    </div>
+                    <button onclick="initiateGameSession('${deck.id}')" class="mt-5 w-full text-xs font-black bg-indigo-950 border-2 border-indigo-700/80 group-hover:bg-lime-400 group-hover:text-indigo-950 group-hover:border-lime-400 py-3 rounded-xl transition duration-300 flex items-center justify-center gap-1.5 uppercase tracking-wider shadow-inner">
+                        <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i> Ignition Launch
+                    </button>
+                `;
+                grid.appendChild(card);
+            });
+            lucide.createIcons();
+        }
+
+        function initiateGameSession(deckId) {
+            let userDecks = JSON.parse(localStorage.getItem('xuejong_decks')) || coreFallbacks;
+            activeDeck = userDecks.find(d => d.id === deckId);
+            document.getElementById('setupModal').classList.remove('hidden');
+        }
+
+        function launchMatchSession(mode) {
+            gameMode = mode;
+            document.getElementById('setupModal').classList.add('hidden');
+            document.getElementById('navControls').classList.add('hidden');
+            document.getElementById('gameHud').classList.remove('hidden');
+            document.getElementById('gameHud').classList.add('flex');
+
+            const badge = document.getElementById('modeBadge');
+            document.getElementById('timerDisplay').className = 'hidden';
+            document.getElementById('heartsDisplay').className = 'hidden';
+
+            if(mode === 'blitz') {
+                badge.className = "text-[10px] px-2.5 py-1 rounded bg-amber-400 text-indigo-950 font-black uppercase tracking-widest";
+                badge.innerText = "Blitz Engine";
+                startTimedBlitzEngine();
+            } else {
+                badge.className = "text-[10px] px-2.5 py-1 rounded bg-rose-500 text-white font-black uppercase tracking-widest";
+                badge.innerText = "Survival Core";
+                startSurvivalEngine();
+            }
+
+            switchView('arena');
+            initializeTileArenaLayout();
+        }
+
+        function startTimedBlitzEngine() {
+            document.getElementById('timerDisplay').className = 'flex items-center gap-1 font-mono text-sm font-black text-amber-400 bg-amber-400/20 px-3 py-1 rounded-lg border-2 border-amber-400 animate-pulse';
+            timeRemaining = 60;
+            document.getElementById('timeClock').innerText = `${timeRemaining}s`;
+            timerInterval = setInterval(() => {
+                timeRemaining--;
+                document.getElementById('timeClock').innerText = `${timeRemaining}s`;
+                if(timeRemaining <= 0) triggerEndGame(false, "System Outage!", "The temporal window expired before completion rules could clear.");
+            }, 1000);
+        }
+
+        function startSurvivalEngine() {
+            document.getElementById('heartsDisplay').className = 'flex items-center gap-0.5 text-rose-400 bg-rose-500/20 px-3 py-1 rounded-lg border-2 border-rose-500/40';
+            survivalLives = 3;
+            renderHeartsUI();
+        }
+
+        function renderHeartsUI() {
+            const container = document.getElementById('heartIcons');
+            container.innerHTML = '';
+            for(let i=0; i<3; i++) {
+                container.innerHTML += `<i data-lucide="heart" class="w-4 h-4 ${i < survivalLives ? 'text-rose-400 fill-rose-500' : 'text-indigo-950 fill-indigo-950'}"></i>`;
+            }
+            lucide.createIcons();
+        }
+
+        function initializeTileArenaLayout() {
+            let deckArray = [];
+            matchedPairsCount = 0;
+            chosenCards = [];
+
+            activeDeck.cards.forEach(card => {
+                deckArray.push({ instanceId: `t-${card.id}`, matchId: card.id, type: 'term', text: card.term });
+                deckArray.push({ instanceId: `d-${card.id}`, matchId: card.id, type: 'definition', text: card.definition });
+            });
+
+            for (let i = deckArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deckArray[i], deckArray[j]] = [deckArray[j], deckArray[i]];
+            }
+
+            const grid = document.getElementById('gameGrid');
+            grid.innerHTML = '';
+            grid.style.pointerEvents = 'auto';
+
+            deckArray.forEach(tile => {
+                const cardWrapper = document.createElement('div');
+                cardWrapper.className = 'perspective-1000 aspect-[4/3] w-full cursor-pointer';
+                cardWrapper.id = tile.instanceId;
+                cardWrapper.onclick = () => handleTileSelection(tile, cardWrapper);
+                cardWrapper.innerHTML = `
+                    <div class="card-inner w-full h-full transform-style-3d transition-transform duration-500 relative rounded-2xl border-2 border-indigo-700 bg-indigo-900 flex items-center justify-center p-3 text-center shadow-lg">
+                        <!-- Bright Energetic Front Face -->
+                        <div class="backface-hidden rotate-y-180 absolute inset-0 w-full h-full p-2 flex items-center justify-center bg-white text-indigo-950 rounded-2xl overflow-y-auto text-xs font-black border-4 border-lime-400 shadow-inner">${tile.text}</div>
+                        <!-- Bold Textures Back Face -->
+                        <div class="backface-hidden absolute inset-0 w-full h-full flex flex-col items-center justify-center bg-indigo-950/60 rounded-2xl text-indigo-400 hover:text-lime-400 hover:border-lime-400 transition-all border-2 border-transparent duration-300">
+                            <i data-lucide="help-circle" class="w-7 h-7 opacity-60"></i>
+                            <span class="text-[9px] font-black uppercase tracking-widest mt-1 opacity-40">${tile.type}</span>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(cardWrapper);
+            });
+            lucide.createIcons();
+        }
+
+        function handleTileSelection(tileData, element) {
+            const inner = element.querySelector('.card-inner');
+            if (chosenCards.some(item => item.tile.instanceId === tileData.instanceId) || element.classList.contains('opacity-0')) return;
+
+            inner.style.transform = 'rotateY(180deg)';
+            chosenCards.push({ tile: tileData, dom: element, inner: inner });
+
+            if (chosenCards.length === 2) {
+                document.getElementById('gameGrid').style.pointerEvents = 'none';
+                const [cardA, cardB] = chosenCards;
+
+                if (cardA.tile.matchId === cardB.tile.matchId && cardA.tile.type !== cardB.tile.type) {
+                    matchedPairsCount++;
+                    setTimeout(() => {
+                        cardA.dom.classList.add('opacity-0', 'pointer-events-none', 'scale-90', 'transition', 'duration-300');
+                        cardB.dom.classList.add('opacity-0', 'pointer-events-none', 'scale-90', 'transition', 'duration-300');
+                        if(gameMode === 'blitz') { timeRemaining += 3; document.getElementById('timeClock').innerText = `${timeRemaining}s`; }
+                        chosenCards = [];
+                        document.getElementById('gameGrid').style.pointerEvents = 'auto';
+                        if (matchedPairsCount === activeDeck.cards.length) triggerEndGame(true, "Synapse Victory!", "All connection matrices successfully integrated into neural memory stores.");
+                    }, 400);
+                } else {
+                    if(gameMode === 'survival') {
+                        survivalLives--;
+                        renderHeartsUI();
+                        if(survivalLives <= 0) {
+                            setTimeout(() => triggerEndGame(false, "Core Defeat!", "Integrity checks depleted. Re-read critical resource points."), 400);
+                            return;
+                        }
+                    }
+                    setTimeout(() => {
+                        cardA.inner.classList.add('animate-shake');
+                        cardB.inner.classList.add('animate-shake');
+                    }, 150);
+                    setTimeout(() => {
+                        cardA.inner.style.transform = '';
+                        cardB.inner.style.transform = '';
+                        cardA.inner.classList.remove('animate-shake');
+                        cardB.inner.classList.remove('animate-shake');
+                        chosenCards = [];
+                        document.getElementById('gameGrid').style.pointerEvents = 'auto';
+                    }, 900);
+                }
+            }
+        }
+
+        function triggerEndGame(isWin, title, desc) {
+            clearInterval(timerInterval);
+            const modal = document.getElementById('endGameModal');
+            const icon = document.getElementById('endGameIcon');
+            document.getElementById('endGameTitle').innerText = title;
+            document.getElementById('endGameDesc').innerText = desc;
+            
+            if(isWin) {
+                icon.className = "w-14 h-14 mx-auto rounded-2xl flex items-center justify-center mb-4 bg-lime-400 text-indigo-950 shadow-lg shadow-lime-400/20";
+                icon.innerHTML = '<i data-lucide="award" class="w-7 h-7"></i>';
+            } else {
+                icon.className = "w-14 h-14 mx-auto rounded-2xl flex items-center justify-center mb-4 bg-rose-500 text-white shadow-lg shadow-rose-500/20";
+                icon.innerHTML = '<i data-lucide="alert-triangle" class="w-7 h-7"></i>';
+            }
+            modal.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function resetDeckCreatorWorkspace() {
+            document.getElementById('subjectInput').value = '';
+            document.getElementById('topicInput').value = '';
+            document.getElementById('rowsContainer').innerHTML = '';
+            pairCount = 0;
+            for(let i=0; i<3; i++) addCreatorRow();
+        }
+
+        function addCreatorRow() {
+            pairCount++;
+            const row = document.createElement('div');
+            row.className = 'flex items-center gap-2 bg-indigo-900 border border-indigo-800 rounded-xl p-2.5 target-row shadow-sm';
+            row.id = `row-${pairCount}`;
+            row.innerHTML = `
+                <div class="w-6 font-mono text-xs text-indigo-400 font-black index-tag text-center">${pairCount}</div>
+                <div class="flex-1"><input type="text" placeholder="Term..." class="term-input w-full bg-indigo-950 border-2 border-indigo-800 rounded-lg px-2.5 py-1.5 text-xs text-white font-semibold focus:outline-none focus:border-lime-400 transition placeholder:text-indigo-800"></div>
+                <div class="flex-1"><input type="text" placeholder="Definition..." class="def-input w-full bg-indigo-950 border-2 border-indigo-800 rounded-lg px-2.5 py-1.5 text-xs text-white font-semibold focus:outline-none focus:border-lime-400 transition placeholder:text-indigo-800"></div>
+                <button type="button" onclick="document.getElementById('${row.id}').remove();" class="text-indigo-400 hover:text-rose-400 p-1.5 transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+            `;
+            document.getElementById('rowsContainer').appendChild(row);
+            lucide.createIcons();
+        }
+
+        document.getElementById('addRowBtn').addEventListener('click', addCreatorRow);
+        document.getElementById('publishBtn').addEventListener('click', () => {
+            const sub = document.getElementById('subjectInput').value.trim();
+            const top = document.getElementById('topicInput').value.trim();
+            if(!sub || !top) return alert('Heading text fields required!');
+
+            const cards = [];
+            document.querySelectorAll('.target-row').forEach(row => {
+                const term = row.querySelector('.term-input').value.trim();
+                const def = row.querySelector('.def-input').value.trim();
+                if(term && def) cards.push({ id: Math.random().toString(36).substr(2, 9), term, definition: def });
+            });
+
+            if(cards.length < 3) return alert('Assemble at least 3 completed matrix sets.');
+
+            let currentDecks = JSON.parse(localStorage.getItem('xuejong_decks')) || coreFallbacks;
+            currentDecks.push({ id: `custom-${Date.now()}`, subject: sub, topic: top, cards });
+            localStorage.setItem('xuejong_decks', JSON.stringify(currentDecks));
+            
+            switchView('dashboard');
+        });
+
+        window.addEventListener('DOMContentLoaded', () => { switchView('dashboard'); });
+    </script>
+</body>
+</html>
+
+```
