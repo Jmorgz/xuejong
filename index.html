@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XuéJong - Flashcard Workspace</title>
+    <title>XuéJong - Complete Flashcard App</title>
     <style>
         :root {
             --bg-color: #0f172a;
             --card-color: #1e293b;
             --accent-color: #3b82f6;
+            --success-color: #10b981;
             --text-color: #f8fafc;
             --text-muted: #94a3b8;
         }
@@ -21,6 +22,8 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
         }
         .container {
             width: 100%;
@@ -29,7 +32,25 @@
         h1 { text-align: center; color: var(--accent-color); margin-bottom: 5px; }
         .subtitle { text-align: center; color: var(--text-muted); margin-top: 0; margin-bottom: 25px; }
         
-        /* Tab Navigation Layout */
+        /* App Screens State Engine */
+        .screen { display: none; }
+        .screen.active { display: block; }
+
+        /* Screen 1: Landing Page Elements */
+        .landing-card {
+            background: var(--card-color);
+            padding: 30px;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            margin-top: 40px;
+        }
+        .logo-icon {
+            font-size: 64px;
+            margin-bottom: 15px;
+        }
+
+        /* Tabs Interface Controls */
         .tab-container {
             display: flex;
             border-bottom: 2px solid var(--card-color);
@@ -41,7 +62,7 @@
             border: none;
             color: var(--text-muted);
             padding: 12px;
-            font-size: 15px;
+            font-size: 14px;
             font-weight: bold;
             cursor: pointer;
             transition: all 0.2s;
@@ -60,7 +81,7 @@
         label { display: block; margin-bottom: 6px; font-size: 14px; color: var(--text-muted); }
         input, textarea {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             background: var(--bg-color);
             border: 1px solid #334155;
             border-radius: 6px;
@@ -68,7 +89,7 @@
             box-sizing: border-box;
             font-size: 15px;
         }
-        textarea { height: 180px; font-family: monospace; resize: vertical; }
+        textarea { height: 150px; font-family: monospace; }
         
         .card-row {
             display: flex;
@@ -80,92 +101,209 @@
             background: var(--accent-color);
             color: white;
             border: none;
-            padding: 12px 20px;
-            border-radius: 6px;
+            padding: 14px 20px;
+            border-radius: 8px;
             font-weight: bold;
             cursor: pointer;
             width: 100%;
             font-size: 15px;
+            margin-top: 10px;
         }
         button:hover { opacity: 0.9; }
-        .btn-secondary { background: #334155; margin-bottom: 15px; }
-        .btn-danger { background: #ef4444; width: auto; padding: 10px; }
+        .btn-secondary { background: #334155; margin-top: 0; margin-bottom: 15px; }
+        .btn-danger { background: #ef4444; width: auto; padding: 12px; margin-top: 0; }
+        .btn-nav { background: transparent; border: 2px solid var(--accent-color); color: var(--accent-color); margin-top: 20px; }
+
+        /* Screen 3: Interactive Game Mode Flashcard Canvas */
+        .deck-header-info {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .deck-header-info span {
+            background: #334155;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .flashcard-wrapper {
+            perspective: 1000px;
+            width: 100%;
+            height: 300px;
+            margin: 20px 0;
+            cursor: pointer;
+        }
+        .flashcard-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        .flashcard-wrapper.flipped .flashcard-inner {
+            transform: rotateY(180deg);
+        }
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 25px;
+            box-sizing: border-box;
+            border-radius: 16px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+            font-size: 22px;
+            font-weight: 500;
+        }
+        .card-front {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            border: 2px solid var(--accent-color);
+            color: white;
+        }
+        .card-back {
+            background: linear-gradient(135deg, #1e3a8a, #172554);
+            border: 2px solid var(--success-color);
+            color: white;
+            transform: rotateY(180deg);
+            font-size: 18px;
+        }
+        .controls-row {
+            display: flex;
+            gap: 15px;
+            justify-content: space-between;
+            margin-top: 15px;
+        }
+        .progress-tracker {
+            text-align: center;
+            color: var(--text-muted);
+            margin-top: 15px;
+            font-size: 14px;
+        }
         
-        /* Notification Toast Styling */
         #toast {
             position: fixed;
             bottom: 20px;
-            background: #10b981;
+            background: var(--success-color);
             color: white;
             padding: 12px 24px;
             border-radius: 30px;
             font-weight: bold;
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
             display: none;
-            animation: slideUp 0.3s ease;
+            z-index: 100;
         }
-        @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>XuéJong Workspace</h1>
-    <p class="subtitle">Create or Import Flashcard Decks</p>
 
-    <!-- Choice Tabs navigation system -->
-    <div class="tab-container">
-        <button class="tab-btn active" onclick="switchTab('form')">Option A: Step-by-Step Form</button>
-        <button class="tab-btn" onclick="switchTab('text')">Option B: Paste Text Code</button>
+    <div id="screen-landing" class="screen active">
+        <div class="landing-card">
+            <div class="logo-icon">⚡</div>
+            <h1>Welcome to XuéJong</h1>
+            <p class="subtitle">Your High-Energy Study Sandbox</p>
+            <p style="color: var(--text-muted); margin-bottom: 30px;">Build cards manually or drop quick text codes to start studying immediately.</p>
+            <button onclick="navigateTo('screen-workspace')">Go to Card Workspace</button>
+        </div>
     </div>
 
-    <!-- CHOICE A: MANUAL ENTRY FORM VIEW -->
-    <div id="form-panel" class="panel active">
-        <div class="form-group">
-            <label>Subject</label>
-            <input type="text" id="form-subject" placeholder="e.g., Physical Ed">
+    <div id="screen-workspace" class="screen">
+        <h1>XuéJong Workspace</h1>
+        <p class="subtitle">Configure your custom deck assets</p>
+
+        <div class="tab-container">
+            <button id="tab-form-btn" class="tab-btn active" onclick="switchTab('form')">Option A: Step-by-Step Form</button>
+            <button id="tab-text-btn" class="tab-btn" onclick="switchTab('text')">Option B: Paste Text Code</button>
         </div>
-        <div class="form-group">
-            <label>Topic</label>
-            <input type="text" id="form-topic" placeholder="e.g., Circulatory System">
+
+        <div id="form-panel" class="panel active">
+            <div class="form-group">
+                <label>Subject</label>
+                <input type="text" id="form-subject" placeholder="e.g., Physical Ed">
+            </div>
+            <div class="form-group">
+                <label>Topic</label>
+                <input type="text" id="form-topic" placeholder="e.g., Circulatory System">
+            </div>
+            
+            <label>Flashcards List</label>
+            <div id="dynamic-cards-container">
+                <div class="card-row">
+                    <input type="text" class="row-term" placeholder="Term">
+                    <input type="text" class="row-definition" placeholder="Definition">
+                    <button class="btn-danger" onclick="removeRow(this)">X</button>
+                </div>
+            </div>
+            <button class="btn-secondary" onclick="addCardRow()">+ Add Another Card</button>
+            <button onclick="submitFormDeck()">Compile & Launch Game</button>
+        </div>
+
+        <div id="text-panel" class="panel">
+            <div class="form-group">
+                <label>Drop Compact Text or RAW JSON Block Below</label>
+                <textarea id="bulk-text-input" placeholder="pe-circulatory|Physical Ed|Circulatory System&#10;Aorta::Main artery carrying blood away from heart...&#10;Atrium::Upper cardiac receiving chamber..."></textarea>
+            </div>
+            <button onclick="submitBulkText()">Parse & Launch Game</button>
         </div>
         
-        <label>Flashcards List</label>
-        <div id="dynamic-cards-container">
-            <!-- Starting base entry row -->
-            <div class="card-row">
-                <input type="text" class="row-term" placeholder="Term">
-                <input type="text" class="row-definition" placeholder="Definition">
-                <button class="btn-danger" onclick="removeRow(this)">X</button>
-            </div>
-        </div>
-        <button class="btn-secondary" onclick="addCardRow()">+ Add Another Card</button>
-        <button onclick="submitFormDeck()">Compile & Save Form Deck</button>
+        <button class="btn-nav" onclick="navigateTo('screen-landing')">← Back to Main Menu</button>
     </div>
 
-    <!-- CHOICE B: COMPACT BULK IMPORTER VIEW -->
-    <div id="text-panel" class="panel">
-        <div class="form-group">
-            <label>Drop Compact Text or RAW JSON Block Below</label>
-            <textarea id="bulk-text-input" placeholder="custom-pe|Physical Ed|Circulatory System&#10;Aorta::Main artery carrying oxygen away from heart...&#10;Atrium::Upper cardiac receiving chamber..."></textarea>
+    <div id="screen-game" class="screen">
+        <div class="deck-header-info">
+            <span id="game-subject-badge">Subject</span>
+            <h2 id="game-topic-title" style="margin-top: 10px; margin-bottom: 5px;">Topic</h2>
         </div>
-        <button onclick="submitBulkText()">Parse & Import Text Entry</button>
+
+        <div class="flashcard-wrapper" id="clickable-card" onclick="toggleCardFlip()">
+            <div class="flashcard-inner">
+                <div class="card-face card-front" id="card-term-display">Term Front</div>
+                <div class="card-face card-back" id="card-definition-display">Definition Back</div>
+            </div>
+        </div>
+
+        <div class="progress-tracker" id="game-progress">Card 1 of 1</div>
+
+        <div class="controls-row">
+            <button class="btn-secondary" style="margin:0;" onclick="navigateCard(-1)">◀ Prev</button>
+            <button style="margin:0;" onclick="navigateCard(1)">Next ▶</button>
+        </div>
+
+        <button class="btn-nav" onclick="navigateTo('screen-workspace')">⚙️ Back to Workspace</button>
     </div>
+
 </div>
 
 <div id="toast">Imported Successfully!</div>
 
 <script>
-    // Handles toggling layouts dynamically for mobile workflows
+    // Global Runtime States Engine
+    let activeDeck = null;
+    let currentCardIndex = 0;
+
+    // Core Router Engine Logic
+    function navigateTo(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+    }
+
     function switchTab(tabName) {
-        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-        document.querySelectorAll('.panel').forEach(panel => panel.classList.remove('active'));
+        document.getElementById('tab-form-btn').classList.remove('active');
+        document.getElementById('tab-text-btn').classList.remove('active');
+        document.getElementById('form-panel').classList.remove('active');
+        document.getElementById('text-panel').classList.remove('active');
         
         if(tabName === 'form') {
-            document.querySelectorAll('.tab-btn')[0].classList.add('active');
-            document.getElementById('form-panel').add('active');
+            document.getElementById('tab-form-btn').classList.add('active');
+            document.getElementById('form-panel').classList.add('active');
         } else {
-            document.querySelectorAll('.tab-btn')[1].classList.add('active');
+            document.getElementById('tab-text-btn').classList.add('active');
             document.getElementById('text-panel').classList.add('active');
         }
     }
@@ -184,19 +322,14 @@
 
     function removeRow(btn) {
         const rows = document.querySelectorAll('.card-row');
-        if(rows.length > 1) {
-            btn.parentElement.remove();
-        } else {
-            alert("Your flashcard deck needs at least one card!");
-        }
+        if(rows.length > 1) btn.parentElement.remove();
+        else alert("Your flashcard deck needs at least one card!");
     }
 
-    // Layer 1: Form Parser Compiler Engine
     function submitFormDeck() {
         const subject = document.getElementById('form-subject').value.trim();
         const topic = document.getElementById('form-topic').value.trim();
-        
-        if(!subject || !topic) return alert("Please fill in both Subject and Topic header spaces.");
+        if(!subject || !topic) return alert("Please fill in both Subject and Topic headers.");
 
         const cards = [];
         document.querySelectorAll('.card-row').forEach((row, i) => {
@@ -207,27 +340,24 @@
             }
         });
 
-        const completedDeck = { id: `form-deck-${Date.now()}`, subject, topic, cards };
-        finalizeImport(completedDeck);
+        if(cards.length === 0) return alert("Please add at least one valid term and definition card.");
+        launchGame({ id: `form-deck-${Date.now()}`, subject, topic, cards });
     }
 
-    // Layer 2: The Multi-Format Smart Routing Layer
     function submitBulkText() {
         const rawData = document.getElementById('bulk-text-input').value.trim();
         if(!rawData) return alert("Please paste configuration data text or code string first.");
 
         try {
             let finalizedDeck;
-            // Check if input data string matches JSON block parameters
             if (rawData.startsWith('{')) {
-                const parsedJson = JSON.parse(rawData);
-                finalizedDeck = normalizeJsonDeck(parsedJson);
+                finalizedDeck = normalizeJsonDeck(JSON.parse(rawData));
             } else if (rawData.includes('|')) {
                 finalizedDeck = parseCompactDeck(rawData);
             } else {
-                throw new Error("Formatting structure unknown. Use Pipe header or JSON schema blocks.");
+                throw new Error("Formatting syntax unknown. Use Pipe headers or JSON blocks.");
             }
-            finalizeImport(finalizedDeck);
+            launchGame(finalizedDeck);
         } catch(e) {
             alert("Processing Error: " + e.message);
         }
@@ -236,28 +366,25 @@
     function parseCompactDeck(rawString) {
         const lines = rawString.split('\n').map(l => l.trim()).filter(l => l.length > 0);
         const [id, subject, topic] = lines[0].split('|').map(p => p.trim());
-
-        if (!id || !subject || !topic) {
-            throw new Error("Invalid Compact Header. Expected standard structure template: id|subject|topic");
-        }
+        if (!id || !subject || !topic) throw new Error("Invalid Compact Header syntax.");
 
         const cards = [];
         for (let i = 1; i < lines.length; i++) {
             const separatorIndex = lines[i].indexOf('::');
-            if (separatorIndex === -1) continue; // Bypasses empty line variants gracefully
-
+            if (separatorIndex === -1) continue;
             cards.push({
                 id: `${id}-card-${i}`,
                 term: lines[i].substring(0, separatorIndex).trim(),
                 definition: lines[i].substring(separatorIndex + 2).trim()
             });
         }
+        if(cards.length === 0) throw new Error("No flashcard records detected in text block.");
         return { id, subject, topic, cards };
     }
 
     function normalizeJsonDeck(json) {
         if (!json.id || !json.subject || !json.topic || !Array.isArray(json.cards)) {
-            throw new Error("JSON document scheme error. Core structural array maps are missing.");
+            throw new Error("JSON structure maps are missing standard core labels.");
         }
         const cleanCards = json.cards.map((card, idx) => ({
             id: card.id || `json-card-${idx}`,
@@ -267,21 +394,56 @@
         return { id: json.id.trim(), subject: json.subject.trim(), topic: json.topic.trim(), cards: cleanCards };
     }
 
-    // Unifies data entry save actions and alerts the user interface surface
-    function finalizeImport(deckObject) {
-        console.log("Deck securely successfully compiled and processed:", deckObject);
+    // Interactive Game Board Boot Engine Mechanics
+    function launchGame(deckObject) {
+        activeDeck = deckObject;
+        currentCardIndex = 0;
         
-        // Triggers green browser confirmation message block
+        // Update Game Screen Interface Labels
+        document.getElementById('game-subject-badge').innerText = activeDeck.subject;
+        document.getElementById('game-topic-title').innerText = activeDeck.topic;
+        
+        updateCardDisplay();
+        
+        // Trigger Toast Pop and Switch Screens Instantly
         const toast = document.getElementById('toast');
-        toast.innerText = `Successfully Imported: ${deckObject.topic}!`;
+        toast.innerText = `Loaded: ${activeDeck.topic}!`;
         toast.style.display = 'block';
-        setTimeout(() => { toast.style.display = 'none'; }, 3000);
-        
-        // This makes your compiled storage structures accessible by your engine logic layers
-        window.activeGameDeck = deckObject;
+        setTimeout(() => { toast.style.display = 'none'; }, 2500);
+
+        navigateTo('screen-game');
     }
 
-    // URL Sniffer Layer - Automatically processes incoming deep link arrays
+    function updateCardDisplay() {
+        if (!activeDeck || activeDeck.cards.length === 0) return;
+        
+        // Reset flip animation state to front face
+        document.getElementById('clickable-card').classList.remove('flipped');
+        
+        const currentCard = activeDeck.cards[currentCardIndex];
+        document.getElementById('card-term-display').innerText = currentCard.term;
+        document.getElementById('card-definition-display').innerText = currentCard.definition;
+        
+        // Update numerical tracker text labels
+        document.getElementById('game-progress').innerText = `Card ${currentCardIndex + 1} of ${activeDeck.cards.length}`;
+    }
+
+    function toggleCardFlip() {
+        document.getElementById('clickable-card').classList.toggle('flipped');
+    }
+
+    function navigateCard(direction) {
+        if (!activeDeck) return;
+        currentCardIndex += direction;
+        
+        // Bound loop limits tracking logic containment pipeline
+        if (currentCardIndex >= activeDeck.cards.length) currentCardIndex = 0;
+        if (currentCardIndex < 0) currentCardIndex = activeDeck.cards.length - 1;
+        
+        updateCardDisplay();
+    }
+
+    // URL Core Sniffer Auto Deep Link Hooks
     window.addEventListener('DOMContentLoaded', () => {
         const urlParams = new URLSearchParams(window.location.search);
         const embeddedDeckBase64 = urlParams.get('deck');
@@ -289,15 +451,12 @@
             try {
                 const decodedJsonString = atob(embeddedDeckBase64);
                 const safeDeck = normalizeJsonDeck(JSON.parse(decodedJsonString));
-                finalizeImport(safeDeck);
+                launchGame(safeDeck);
             } catch(err) {
-                console.error("Auto deep-link deck processing system failure:", err);
+                console.error("Deep link parser engine crash:", err);
             }
         }
     });
 </script>
-
 </body>
 </html>
-
-```
